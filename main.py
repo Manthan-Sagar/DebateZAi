@@ -143,7 +143,7 @@ def run_debate_session():
         # ── Display ──
         if fallacies.get("fallacies"):
             for f in fallacies["fallacies"]:
-                print(f"  ⚠️  Fallacy detected: {f['type']} — {f.get('explanation', '')}")
+                print(f"  ⚠️  Fallacy detected: {f.get('type', 'unknown')} — {f.get('explanation', '')}")
 
         if not user_consistency.get("is_consistent", True):
             print(f"  🔄 Contradiction detected: {user_consistency.get('contradiction', '')}")
