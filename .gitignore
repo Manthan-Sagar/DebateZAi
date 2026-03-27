@@ -38,3 +38,16 @@ data/cmv_raw/
 # Docs (original source files, keep txt versions if needed)
 *.docx
 *.pdf
+
+# Root text files
+AI_Debate_Partner_Roadmap.txt
+AiDebaterChatClaude.txt
+mistral_err.txt
+models.txt
+ollama_debug.txt
+ollama_debug2.txt
+ollama_debug3.txt
+ollama_debug4.txt
+pytest_out.txt
+.env.example
+null
