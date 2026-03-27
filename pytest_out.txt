@@ -1,0 +1,219 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.2, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\manth\Documents\AiDebaterSystem\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\manth\Documents\AiDebaterSystem
+plugins: anyio-4.12.1
+collecting ... collected 9 items
+
+tests/test_parser.py::TestArgumentParser::test_output_has_required_fields PASSED [ 11%]
+tests/test_parser.py::TestArgumentParser::test_premises_is_list PASSED   [ 22%]
+tests/test_parser.py::TestArgumentParser::test_evidence_is_list PASSED   [ 33%]
+tests/test_parser.py::TestArgumentParser::test_confidence_is_valid PASSED [ 44%]
+tests/test_parser.py::TestArgumentParser::test_multiple_premises_extracted PASSED [ 55%]
+tests/test_parser.py::TestArgumentParser::test_edge_case_minimal_input PASSED [ 66%]
+tests/test_parser.py::TestArgumentParser::test_evidence_detected PASSED  [ 77%]
+tests/test_parser.py::TestArgumentParser::test_high_confidence_detection FAILED [ 88%]
+tests/test_parser.py::TestArgumentParser::test_low_confidence_detection FAILED [100%]
+
+================================== FAILURES ===================================
+______________ TestArgumentParser.test_high_confidence_detection ______________
+
+self = <tests.test_parser.TestArgumentParser object at 0x00000140B2E54C50>
+parser = <function parse_argument at 0x00000140B6134720>
+
+    def test_high_confidence_detection(self, parser):
+        """Parser should flag overconfident language."""
+>       result = parser("This is obviously true. Everyone knows it. It's undeniable.")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_parser.py:81: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+modules\argument_parser.py:24: in parse_argument
+    result = call_gemini(prompt, expect_json=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+prompt = 'You are an expert argument analyst. Your task is to parse a debate argument into its structural components.\n\nGiven ...ow parse the following argument:\n\nINPUT: "This is obviously true. Everyone knows it. It\'s undeniable."\n\nOUTPUT:\n'
+expect_json = True
+
+    def call_gemini(prompt: str, expect_json: bool = True) -> dict | str:
+        """
+        Send a prompt to Gemini and return the response.
+    
+        Args:
+            prompt: The full prompt string (including few-shot examples).
+            expect_json: If True, parse response as JSON with retry logic.
+                         If False, return raw text (used for rebuttals / reports).
+    
+        Returns:
+            Parsed dict if expect_json=True, raw string otherwise.
+    
+        Raises:
+            ValueError: If JSON parsing fails after all retries.
+        """
+        last_error = None
+    
+        for attempt in range(1, GEMINI_MAX_RETRIES + 1):
+            try:
+                response = _model.generate_content(prompt)
+                text = response.text.strip()
+    
+                if not expect_json:
+                    return text
+    
+                # \u2500\u2500 Strip markdown code fences if Gemini wraps output \u2500\u2500
+                json_text = _strip_code_fences(text)
+                return json.loads(json_text)
+    
+            except json.JSONDecodeError as e:
+                last_error = e
+                if attempt < GEMINI_MAX_RETRIES:
+                    # Retry with a stricter suffix
+                    prompt = prompt + "\n\nIMPORTANT: Return ONLY valid JSON. No preamble, no explanation, no markdown formatting."
+                    time.sleep(0.5)
+                continue
+    
+            except Exception as e:
+                last_error = e
+                if attempt < GEMINI_MAX_RETRIES:
+                    time.sleep(1)
+                continue
+    
+>       raise ValueError(
+            f"Gemini call failed after {GEMINI_MAX_RETRIES} attempts. "
+            f"Last error: {last_error}"
+        )
+E       ValueError: Gemini call failed after 3 attempts. Last error: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+E       * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash
+E       Please retry in 21.486572827s. [links {
+E         description: "Learn more about Gemini API quotas"
+E         url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+E       }
+E       , violations {
+E         quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+E         quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+E         quota_dimensions {
+E           key: "model"
+E           value: "gemini-2.5-flash"
+E         }
+E         quota_dimensions {
+E           key: "location"
+E           value: "global"
+E         }
+E         quota_value: 5
+E       }
+E       , retry_delay {
+E         seconds: 21
+E       }
+E       ]
+
+gemini_client.py:69: ValueError
+______________ TestArgumentParser.test_low_confidence_detection _______________
+
+self = <tests.test_parser.TestArgumentParser object at 0x00000140B2E54E50>
+parser = <function parse_argument at 0x00000140B6134720>
+
+    def test_low_confidence_detection(self, parser):
+        """Parser should detect hedging language."""
+>       result = parser("I'm not sure, but maybe this could possibly be an issue.")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_parser.py:86: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+modules\argument_parser.py:24: in parse_argument
+    result = call_gemini(prompt, expect_json=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+prompt = 'You are an expert argument analyst. Your task is to parse a debate argument into its structural components.\n\nGiven ...\nNow parse the following argument:\n\nINPUT: "I\'m not sure, but maybe this could possibly be an issue."\n\nOUTPUT:\n'
+expect_json = True
+
+    def call_gemini(prompt: str, expect_json: bool = True) -> dict | str:
+        """
+        Send a prompt to Gemini and return the response.
+    
+        Args:
+            prompt: The full prompt string (including few-shot examples).
+            expect_json: If True, parse response as JSON with retry logic.
+                         If False, return raw text (used for rebuttals / reports).
+    
+        Returns:
+            Parsed dict if expect_json=True, raw string otherwise.
+    
+        Raises:
+            ValueError: If JSON parsing fails after all retries.
+        """
+        last_error = None
+    
+        for attempt in range(1, GEMINI_MAX_RETRIES + 1):
+            try:
+                response = _model.generate_content(prompt)
+                text = response.text.strip()
+    
+                if not expect_json:
+                    return text
+    
+                # \u2500\u2500 Strip markdown code fences if Gemini wraps output \u2500\u2500
+                json_text = _strip_code_fences(text)
+                return json.loads(json_text)
+    
+            except json.JSONDecodeError as e:
+                last_error = e
+                if attempt < GEMINI_MAX_RETRIES:
+                    # Retry with a stricter suffix
+                    prompt = prompt + "\n\nIMPORTANT: Return ONLY valid JSON. No preamble, no explanation, no markdown formatting."
+                    time.sleep(0.5)
+                continue
+    
+            except Exception as e:
+                last_error = e
+                if attempt < GEMINI_MAX_RETRIES:
+                    time.sleep(1)
+                continue
+    
+>       raise ValueError(
+            f"Gemini call failed after {GEMINI_MAX_RETRIES} attempts. "
+            f"Last error: {last_error}"
+        )
+E       ValueError: Gemini call failed after 3 attempts. Last error: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. 
+E       * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-2.5-flash
+E       Please retry in 18.122586553s. [links {
+E         description: "Learn more about Gemini API quotas"
+E         url: "https://ai.google.dev/gemini-api/docs/rate-limits"
+E       }
+E       , violations {
+E         quota_metric: "generativelanguage.googleapis.com/generate_content_free_tier_requests"
+E         quota_id: "GenerateRequestsPerMinutePerProjectPerModel-FreeTier"
+E         quota_dimensions {
+E           key: "model"
+E           value: "gemini-2.5-flash"
+E         }
+E         quota_dimensions {
+E           key: "location"
+E           value: "global"
+E         }
+E         quota_value: 5
+E       }
+E       , retry_delay {
+E         seconds: 18
+E       }
+E       ]
+
+gemini_client.py:69: ValueError
+============================== warnings summary ===============================
+tests/test_parser.py::TestArgumentParser::test_output_has_required_fields
+  c:\Users\manth\Documents\AiDebaterSystem\gemini_client.py:9: FutureWarning: 
+  
+  All support for the `google.generativeai` package has ended. It will no longer be receiving 
+  updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+  See README for more details:
+  
+  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+  
+    import google.generativeai as genai
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_parser.py::TestArgumentParser::test_high_confidence_detection
+FAILED tests/test_parser.py::TestArgumentParser::test_low_confidence_detection
+=================== 2 failed, 7 passed, 1 warning in 53.09s ===================

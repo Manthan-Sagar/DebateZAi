@@ -1,0 +1,40 @@
+# Environment
+.env
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Model files (too large for git)
+models/stance_model/*.pt
+models/stance_model/*.bin
+models/stance_model/checkpoint-*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data files (large)
+data/cmv_raw/
+
+# Streamlit
+.streamlit/
+
+# Docs (original source files, keep txt versions if needed)
+*.docx
+*.pdf

@@ -1,0 +1,134 @@
+[
+    {
+        "input": "Social media should be banned for people under 16 because it causes depression in teenagers and kids can't handle it responsibly.",
+        "expected_claim": "Social media should be banned for people under 16",
+        "expected_premise_count": 2,
+        "expected_confidence": "high"
+    },
+    {
+        "input": "I think universal basic income might actually work because Finland's pilot program showed that people didn't stop working and their mental health improved. Though I'm not sure it would scale to larger economies.",
+        "expected_claim_contains": "universal basic income",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 1,
+        "expected_confidence": "low"
+    },
+    {
+        "input": "Climate change is clearly the biggest threat to humanity. The IPCC report shows temperatures will rise by 2 degrees by 2050. Every scientist agrees on this.",
+        "expected_claim_contains": "climate change",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 1,
+        "expected_confidence": "high"
+    },
+    {
+        "input": "Nuclear energy is the safest form of energy per kilowatt hour produced. According to Our World in Data, nuclear causes 0.03 deaths per TWh compared to coal's 24.6 deaths per TWh. It also produces zero direct carbon emissions.",
+        "expected_claim_contains": "nuclear energy",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 2,
+        "expected_confidence": "medium"
+    },
+    {
+        "input": "Electric vehicles are overrated because the electricity still comes from coal plants.",
+        "expected_claim_contains": "electric vehicles",
+        "expected_premise_count": 1,
+        "expected_confidence": "high"
+    },
+    {
+        "input": "Remote work might be slightly more productive for certain types of knowledge workers, based on a Stanford study of 16,000 employees, but it could also lead to isolation issues over time.",
+        "expected_claim_contains": "remote work",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 1,
+        "expected_confidence": "low"
+    },
+    {
+        "input": "Artificial intelligence will definitely replace all creative jobs within 10 years. AI already writes better poetry than humans and creates stunning art.",
+        "expected_claim_contains": "artificial intelligence",
+        "expected_premise_count": 2,
+        "expected_confidence": "high"
+    },
+    {
+        "input": "Cryptocurrency should be regulated because unregulated markets lead to fraud, as we saw with FTX and Luna crashes. Without oversight, retail investors lose billions.",
+        "expected_claim_contains": "cryptocurrency",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 1,
+        "expected_confidence": "medium"
+    },
+    {
+        "input": "College education is not worth the debt anymore. The average student loan is $37,000 and many graduates can't find jobs in their field.",
+        "expected_claim_contains": "college education",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 1,
+        "expected_confidence": "high"
+    },
+    {
+        "input": "I don't know much about this, but maybe space exploration isn't the best use of government money when there are problems on Earth we haven't solved yet.",
+        "expected_claim_contains": "space exploration",
+        "expected_premise_count": 1,
+        "expected_confidence": "low"
+    },
+    {
+        "input": "Democracy is obviously the best system of governance. Every developed nation uses it. Authoritarian states always collapse eventually.",
+        "expected_claim_contains": "democracy",
+        "expected_premise_count": 2,
+        "expected_confidence": "high"
+    },
+    {
+        "input": "According to a 2023 WHO report, processed meat consumption is linked to a 17% increase in colorectal cancer risk. While correlation isn't causation, the meta-analysis of 800+ studies provides fairly strong evidence that dietary changes could improve public health outcomes.",
+        "expected_claim_contains": "dietary changes",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 2,
+        "expected_confidence": "medium"
+    },
+    {
+        "input": "Free healthcare is a basic human right. Every other developed country provides it. The US system is broken and people are dying because they can't afford insulin.",
+        "expected_claim_contains": "healthcare",
+        "expected_premise_count": 3,
+        "expected_confidence": "high"
+    },
+    {
+        "input": "Standardized testing should be abolished because it doesn't measure real intelligence, it penalizes students from lower-income backgrounds, and it causes unnecessary stress and anxiety.",
+        "expected_claim_contains": "standardized testing",
+        "expected_premise_count": 3,
+        "expected_confidence": "high"
+    },
+    {
+        "input": "Maybe.",
+        "expected_premise_count": 0,
+        "expected_confidence": "low",
+        "notes": "Edge case: minimal input"
+    },
+    {
+        "input": "While I agree that renewable energy is important, the transition needs to be gradual. Germany's rapid move away from nuclear led to increased coal usage, which actually raised emissions in the short term. A balanced approach considering economic impacts and grid stability would be more effective.",
+        "expected_claim_contains": "transition",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 1,
+        "expected_confidence": "medium"
+    },
+    {
+        "input": "You're just saying that because you work for an oil company! Either we go fully green right now or the planet is dead. It's that simple. Only idiots would disagree with this obvious fact.",
+        "expected_claim_contains": "green",
+        "expected_premise_count": 1,
+        "expected_confidence": "high",
+        "notes": "Contains multiple fallacies: ad hominem, false dichotomy, hasty generalization"
+    },
+    {
+        "input": "The minimum wage should be raised to $25 per hour. The cost of living has tripled since the 1970s while wages have stagnated. A MIT living wage calculator shows that a single parent in most US cities needs at least $20/hour just to cover basic expenses.",
+        "expected_claim_contains": "minimum wage",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 2,
+        "expected_confidence": "high"
+    },
+    {
+        "input": "I partially agree with your point about education costs, but I think the real issue is that universities have become bloated with administrative overhead. Tuition has increased 1,200% since 1980, far outpacing inflation, while actual teaching quality hasn't improved proportionally.",
+        "expected_claim_contains": "universities",
+        "expected_premise_count": 2,
+        "expected_evidence_count": 1,
+        "expected_confidence": "medium",
+        "notes": "Concession with reasoning pattern"
+    },
+    {
+        "input": "Veganism is the only ethical diet. Animals feel pain. We have no right to inflict suffering for pleasure. Anyone who eats meat is morally bankrupt.",
+        "expected_claim_contains": "veganism",
+        "expected_premise_count": 3,
+        "expected_confidence": "high"
+    }
+]
