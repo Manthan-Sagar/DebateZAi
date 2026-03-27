@@ -50,4 +50,5 @@ ollama_debug3.txt
 ollama_debug4.txt
 pytest_out.txt
 requirements.txt
-
+.env.example
+.null
