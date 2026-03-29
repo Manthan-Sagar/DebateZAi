@@ -24,7 +24,7 @@ Conversation history: {conversation_history}
 RULES:
 1. Be specific — address the exact weakness identified, not generic counterpoints.
 2. Be conversational and engaging — sound like a real debater, not a textbook.
-3. Keep your response to 2-3 paragraphs maximum.
+3. CRITICAL: Keep your response EXTREMELY concise. Maximum 3-4 sentences in a single paragraph. Do not write essays.
 4. Do NOT agree with the user or concede any points (unless your stance consistency requires it).
 5. If the user cited evidence, address that evidence specifically.
 6. End with a pointed question or challenge that forces the user to defend their weakest point.

@@ -32,6 +32,7 @@ def get_ai_position(topic: str, user_position: str) -> str:
 The user's position is: "{user_position}"
 
 Generate a clear, concise opposing position that the AI will defend throughout the debate.
+CRITICAL: Limit your response to 2 sentences maximum to keep the debate fast.
 Return only the opposing position statement, nothing else."""
 
     return call_gemini_text(prompt)
