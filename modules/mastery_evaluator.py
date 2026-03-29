@@ -55,20 +55,11 @@ class MasteryEvaluator:
         clean_session_log = "\n".join(clean_log_lines)
 
         if self.mode == '1': # Debate Mode
-            if self.fallacy_log:
-                fallacy_summary = "\n".join(
-                    f"  Turn {f['turn']}: {f['type']} — \"{f['sentence']}\""
-                    for f in self.fallacy_log
-                )
-            else:
-                fallacy_summary = "No fallacies detected."
-
             prompt = DEBATE_REPORT_PROMPT.format(
                 topic=self.topic,
                 user_position=self.user_position,
                 ai_position=self.ai_position,
                 clean_session_log=clean_session_log,
-                fallacy_summary=fallacy_summary
             )
         else: # Knowledge Test Mode
             prompt = TEST_REPORT_PROMPT.format(

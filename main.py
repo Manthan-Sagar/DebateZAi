@@ -178,8 +178,11 @@ def run_debate_session():
                 for f in fallacies["fallacies"]:
                     print(f"  ⚠️  Fallacy detected: {f.get('type', 'unknown')} — {f.get('explanation', '')}")
 
-            if not user_consistency.get("is_consistent", True):
+            change_type = user_consistency.get("change_type", "consistent")
+            if change_type == "contradiction":
                 print(f"  🔄 Contradiction detected: {user_consistency.get('contradiction', '')}")
+            elif change_type == "refinement":
+                print(f"  📝 Argument refined: good evolution of your position.")
 
             print(f"\n🤖 [AI]: {rebuttal}\n")
 

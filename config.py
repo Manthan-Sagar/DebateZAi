@@ -75,6 +75,9 @@ REBUTTAL_STRATEGIES = {
     "causality": "causal_challenge",    # "You haven't shown A causes B"
 }
 
+# Strategic modes — used when the user's argument is strong
+STRATEGIC_MODES = ["reframe", "concede_and_pivot"]
+
 # ──────────────────────────────────────────────
 # Reddit / PRAW (for CMV data collection)
 # ──────────────────────────────────────────────

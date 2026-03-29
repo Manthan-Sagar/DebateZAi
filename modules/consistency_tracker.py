@@ -1,7 +1,7 @@
 """
 Module 5 — Consistency Tracker
 Tracks all positions taken by both AI and user across the debate.
-Detects contradictions before generating new responses.
+Detects contradictions vs refinements before generating new responses.
 """
 
 from gemini_client import call_gemini
@@ -10,7 +10,7 @@ from gemini_client import call_gemini
 class ConsistencyTracker:
     """
     Maintains a running log of all positions taken during the debate.
-    Checks for contradictions in both AI and user statements.
+    Distinguishes between genuine contradictions and argument refinements.
     """
 
     def __init__(self):
@@ -19,6 +19,7 @@ class ConsistencyTracker:
         self.ai_concessions = []     # Points the AI has conceded
         self.user_concessions = []   # Points the user has conceded
         self.contradictions_found = []  # Log of detected contradictions
+        self.refinements_found = []    # Log of detected refinements
 
     def record_ai_position(self, position: str):
         """Record a position the AI has taken."""
@@ -72,15 +73,15 @@ Return ONLY valid JSON.
     def check_user_consistency(self, new_argument: dict) -> dict:
         """
         Check if the user's new argument contradicts their prior positions.
-        User contradictions are flagged as evaluation signals.
+        Distinguishes between genuine contradictions and natural argument refinements.
 
         Returns:
-            dict with "is_consistent" bool and "contradiction" details.
+            dict with "change_type" (consistent/refinement/contradiction) and details.
         """
         if not self.user_positions:
-            return {"is_consistent": True, "contradiction": None}
+            return {"is_consistent": True, "change_type": "consistent", "contradiction": None}
 
-        prompt = f"""Check if the following new argument contradicts any previously stated positions by the same person.
+        prompt = f"""You are an expert debate analyst. Classify HOW the user's new argument relates to their previous positions.
 
 NEW ARGUMENT:
 Claim: {new_argument.get('claim', '')}
@@ -89,20 +90,45 @@ Premises: {new_argument.get('premises', [])}
 PREVIOUS POSITIONS:
 {chr(10).join(f'- Claim: {p["claim"]}, Premises: {p["premises"]}' for p in self.user_positions)}
 
+Classify the relationship as ONE of:
+1. "consistent" — The new argument aligns with or continues the same line of reasoning.
+2. "refinement" — The user is narrowing, deepening, or adding nuance to their previous position. This is NOT a contradiction. Examples: going from "AI is bad" to "AI creates systemic risks" is a refinement, not a contradiction.
+3. "contradiction" — The user is genuinely taking an OPPOSITE stance to something they previously said. Example: saying "AI will destroy all jobs" then later saying "AI won't affect employment at all."
+
+CRITICAL: Most argument evolution in a debate is "consistent" or "refinement". Only flag "contradiction" for genuine 180-degree reversals.
+
 Return JSON:
 {{
-    "is_consistent": true/false,
-    "contradiction": "explanation of what contradicts what" or null
+    "change_type": "consistent" or "refinement" or "contradiction",
+    "explanation": "brief explanation of the relationship"
 }}
 
 Return ONLY valid JSON.
 """
         result = call_gemini(prompt, expect_json=True)
 
-        if not result.get("is_consistent", True):
-            self.contradictions_found.append(result.get("contradiction", ""))
+        change_type = result.get("change_type", "consistent")
 
-        return result
+        if change_type == "contradiction":
+            self.contradictions_found.append(result.get("explanation", ""))
+            return {
+                "is_consistent": False,
+                "change_type": "contradiction",
+                "contradiction": result.get("explanation", ""),
+            }
+        elif change_type == "refinement":
+            self.refinements_found.append(result.get("explanation", ""))
+            return {
+                "is_consistent": True,
+                "change_type": "refinement",
+                "contradiction": None,
+            }
+        else:
+            return {
+                "is_consistent": True,
+                "change_type": "consistent",
+                "contradiction": None,
+            }
 
     def get_context_for_prompt(self) -> str:
         """Format the full consistency context to inject into Gemini prompts."""
@@ -120,6 +146,7 @@ Return ONLY valid JSON.
         return {
             "user_positions_count": len(self.user_positions),
             "user_contradictions": self.contradictions_found,
+            "user_refinements": self.refinements_found,
             "user_concessions": self.user_concessions,
             "ai_positions_count": len(self.ai_positions),
         }

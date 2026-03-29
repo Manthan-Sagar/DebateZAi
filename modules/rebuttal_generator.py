@@ -1,6 +1,6 @@
 """
 Rebuttal Generator — generates targeted rebuttals using strategy selection.
-Three strategies: counterevidence, scope_reduction, causal_challenge.
+Five strategies: counterevidence, scope_reduction, causal_challenge, reframe, concede_and_pivot.
 """
 
 import json
@@ -25,9 +25,9 @@ def generate_rebuttal(
         ai_position: AI's assigned position.
         parsed_argument: Output from argument_parser.
         weakness_scores: Output from weakness_scorer.
-        rebuttal_strategy: One of "counterevidence", "scope_reduction", "causal_challenge".
+        rebuttal_strategy: One of the 5 strategies.
         conversation_history: List of previous turns [{"role": "user"|"ai", "content": str}].
-        stance_type: From stance classifier — "new_argument", "restatement", etc.
+        stance_type: From stance classifier.
 
     Returns:
         The AI's rebuttal as a string.
@@ -49,6 +49,13 @@ def generate_rebuttal(
         for turn in conversation_history[-6:]  # Last 6 turns for context
     ) if conversation_history else "(First turn)"
 
+    # Extract AI's past arguments to prevent looping
+    ai_past = [
+        turn['content'][:150] for turn in conversation_history
+        if turn['role'] == 'ai'
+    ]
+    ai_past_arguments = "\n".join(f"- {arg}" for arg in ai_past) if ai_past else "(No previous arguments)"
+
     # Get stance instruction
     stance_instruction = STANCE_INSTRUCTIONS.get(stance_type, STANCE_INSTRUCTIONS["default"])
 
@@ -61,6 +68,7 @@ def generate_rebuttal(
         main_claim=parsed_argument["main_claim"],
         argument_json=json.dumps(parsed_argument, indent=2),
         conversation_history=history_str,
+        ai_past_arguments=ai_past_arguments,
         stance_instruction=stance_instruction,
     )
 

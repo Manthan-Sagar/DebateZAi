@@ -9,17 +9,23 @@ The AI's stance was: "{ai_position}".
 Here is a human-readable summary of the entire debate:
 {clean_session_log}
 
-Here is a summary of the logical fallacies the user committed (if any):
-{fallacy_summary}
+IMPORTANT: You must independently analyze the user's arguments. Do NOT blindly trust any labels or flags from the system. Judge the user's logical quality yourself from the raw text.
 
 Based on the debate log, generate a comprehensive "Debate Evaluation Report" formatted in Markdown.
 Your report MUST include the following sections:
 
-1. **Overall Performance**: A brief summary of how well they defended their stance.
-2. **Arguments Left Behind**: What strong arguments for "{user_position}" did the user fail to mention?
-3. **Line-by-Line Fallacy Breakdown**: Discuss the specific fallacies they committed, why they were fallacious, and how they harmed their argument.
-4. **Presentation & Framing Strategy**: How could the user have framed their arguments more effectively or persuasively?
-5. **Advanced Tactic - Trapping the Opponent**: Provide a specific, logical debate "trap" the user could have used against the AI's stance ("{ai_position}") to corner it.
+1. **Overall Performance**: A 2-3 sentence summary of how well they defended their stance. Be fair and balanced.
+2. **Strongest Arguments**: What were the user's best points? Acknowledge what they did well.
+3. **Arguments Left Behind**: What strong arguments for "{user_position}" did the user fail to raise? Suggest 2-3 missed angles.
+4. **Logical Weaknesses**: Only flag genuine, clear logical errors the user made. For each one, explain WHY it was a weakness and HOW to fix it. Do NOT invent fallacies that don't exist.
+5. **Presentation & Framing Strategy**: How could the user have framed their arguments more effectively or persuasively?
+6. **Advanced Tactic - Trapping the Opponent**: Provide a specific, logical debate "trap" the user could have used against the AI's stance ("{ai_position}") to corner it.
+
+CRITICAL RULES:
+- Be symmetric: if the AI also made weak arguments, acknowledge it.
+- Distinguish between risk-based arguments and predictive claims. Saying "AI risks creating inequality" is NOT a logical fallacy.
+- Citing institutional reports (WEF, IPCC) IS valid evidence, NOT "appeal to authority."
+- Argument refinement across turns IS good debate practice, NOT a contradiction.
 
 Output the final report directly. Do not include any JSON or preamble.
 """

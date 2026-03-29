@@ -7,7 +7,7 @@ The premise with the highest combined score gets attacked first.
 import json
 from gemini_client import call_gemini
 from prompts.weakness_scorer import WEAKNESS_SCORER_PROMPT
-from config import REBUTTAL_STRATEGIES
+from config import REBUTTAL_STRATEGIES, STRATEGIC_MODES
 
 
 def score_weaknesses(parsed_argument: dict, topic: str) -> dict:
@@ -50,14 +50,22 @@ def score_weaknesses(parsed_argument: dict, topic: str) -> dict:
 def get_attack_strategy(scored_premises: list, target_index: int) -> str:
     """
     Determine which rebuttal strategy to use based on the highest vulnerability dimension.
+    Occasionally uses strategic modes for strong arguments.
 
     Returns:
-        One of: "counterevidence", "scope_reduction", "causal_challenge"
+        One of: "counterevidence", "scope_reduction", "causal_challenge", "reframe", "concede_and_pivot"
     """
+    import random
+
     if not scored_premises or target_index >= len(scored_premises):
         return "counterevidence"  # default
 
     target = scored_premises[target_index]
-    dimension = target.get("most_vulnerable_dimension", "evidence")
+    total_vuln = target.get("total_vulnerability", 1.5)
 
+    # If the user's argument is strong (low vulnerability), use a strategic mode
+    if total_vuln < 1.0:
+        return random.choice(STRATEGIC_MODES)
+
+    dimension = target.get("most_vulnerable_dimension", "evidence")
     return REBUTTAL_STRATEGIES.get(dimension, "counterevidence")
