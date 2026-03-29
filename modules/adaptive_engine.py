@@ -6,7 +6,7 @@ that target the user's weak areas. Difficulty adapts based on performance.
 
 import json
 from gemini_client import call_gemini
-from prompts.adaptive_questions import CONCEPT_GRAPH_PROMPT, ADAPTIVE_QUESTION_PROMPT
+from prompts.adaptive_questions import CONCEPT_GRAPH_PROMPT, ADAPTIVE_QUESTION_PROMPT, ADAPTIVE_EVALUATION_PROMPT
 
 
 class AdaptiveEngine:
@@ -21,7 +21,7 @@ class AdaptiveEngine:
         self.demonstrated = set()        # Concept IDs user has shown understanding of
         self.weak = set()                # Concept IDs user handled poorly
         self.unaddressed = set()         # Concept IDs never touched
-        self.performance_scores = []     # Rolling performance (0-1 per turn)
+        self.performance_scores = []     # Rolling performance (1-10 per turn)
         self.questions_asked = []        # History of probing questions
 
     def initialize_concept_graph(self, topic: str) -> dict:
@@ -29,10 +29,20 @@ class AdaptiveEngine:
         prompt = CONCEPT_GRAPH_PROMPT.format(topic=topic)
         self.concept_graph = call_gemini(prompt, expect_json=True)
 
-        # Initialize all concepts as unaddressed
-        for concept in self.concept_graph.get("concepts", []):
-            self.unaddressed.add(concept["id"])
-
+        # Initialize all concepts as unaddressed (safely handling weak LLM outputs)
+        valid_concepts = []
+        for i, concept in enumerate(self.concept_graph.get("concepts", [])):
+            if isinstance(concept, dict):
+                # Fallback if the LLM forgets the 'id' key
+                concept_id = str(concept.get("id", f"concept_{i}")).strip()
+                if not concept_id:
+                    concept_id = f"concept_{i}"
+                    
+                concept["id"] = concept_id
+                self.unaddressed.add(concept_id)
+                valid_concepts.append(concept)
+        
+        self.concept_graph["concepts"] = valid_concepts
         return self.concept_graph
 
     def update_concept_coverage(self, parsed_argument: dict, weakness_scores: dict):
@@ -41,22 +51,21 @@ class AdaptiveEngine:
         understanding of and which they've handled weakly.
         """
         # This will be enhanced with smarter concept-matching logic
-        # For now, uses Gemini to map argument content to concept IDs
         pass
 
     def get_performance_level(self) -> str:
-        """Calculate current performance level from rolling scores."""
+        """Calculate current performance level from rolling scores (1-10 scale)."""
         if not self.performance_scores:
             return "basic"
 
         avg = sum(self.performance_scores) / len(self.performance_scores)
-        if avg < 0.3:
+        if avg < 3.0:
             return "struggling"
-        elif avg < 0.5:
+        elif avg < 5.0:
             return "basic"
-        elif avg < 0.7:
+        elif avg < 7.0:
             return "competent"
-        elif avg < 0.9:
+        elif avg < 9.0:
             return "strong"
         else:
             return "expert"
@@ -66,6 +75,7 @@ class AdaptiveEngine:
         topic: str,
         debate_history: list,
         fallacies_committed: list,
+        target_difficulty: str = "intermediate"
     ) -> dict:
         """
         Generate a targeted probing question based on current concept coverage.
@@ -73,22 +83,57 @@ class AdaptiveEngine:
         Returns:
             dict with: question, target_concept, difficulty, rationale
         """
-        prompt = ADAPTIVE_QUESTION_PROMPT.format(
-            topic=topic,
-            concept_graph=json.dumps(self.concept_graph, indent=2),
-            demonstrated_concepts=json.dumps(list(self.demonstrated)),
-            weak_concepts=json.dumps(list(self.weak | self.unaddressed)),
-            fallacies_committed=json.dumps(fallacies_committed),
-            performance_level=self.get_performance_level(),
-            debate_history=json.dumps(debate_history[-6:]),
-        )
+        import difflib
 
-        result = call_gemini(prompt, expect_json=True)
-        self.questions_asked.append(result)
-        return result
+        for attempt in range(3):
+            prompt = ADAPTIVE_QUESTION_PROMPT.format(
+                topic=topic,
+                concept_graph=json.dumps(self.concept_graph, indent=2),
+                demonstrated_concepts=json.dumps(list(self.demonstrated)),
+                previously_asked_questions=json.dumps([q.get("question") for q in self.questions_asked], indent=2),
+                target_difficulty=target_difficulty
+            )
+
+            if attempt > 0:
+                prompt += "\n\nCRITICAL WARNING: The question you just generated was ALREADY ASKED. You MUST provide a NEW, UNIQUE question."
+
+            result = call_gemini(prompt, expect_json=True)
+            new_question = result.get("question", "").strip()
+
+            is_duplicate = False
+            for past_q in self.questions_asked:
+                past_text = past_q.get("question", "").strip()
+                if past_text and new_question and difflib.SequenceMatcher(None, past_text, new_question).ratio() > 0.8:
+                    is_duplicate = True
+                    break
+            
+            if not is_duplicate and new_question:
+                self.questions_asked.append(result)
+                return result
+
+        # Fallback if the LLM completely fails 3 times
+        fallback = {
+            "question": f"Could you explain an application or real-world example of '{topic}' at a more {target_difficulty} level that we haven't touched on yet?",
+            "target_concept": "fallback_concept",
+            "difficulty": target_difficulty,
+            "rationale": "Fallback question invoked after LLM repeats itself."
+        }
+        self.questions_asked.append(fallback)
+        return fallback
+
+    def evaluate_answer(self, topic: str, question: str, user_input: str) -> dict:
+        """
+        Evaluate the user's answer and return a structured grade out of 10.
+        """
+        prompt = ADAPTIVE_EVALUATION_PROMPT.format(
+            topic=topic,
+            question=question,
+            user_input=user_input
+        )
+        return call_gemini(prompt, expect_json=True)
 
     def record_response_quality(self, score: float):
-        """Record a 0-1 score for the user's response to a probing question."""
+        """Record a 1-10 score for the user's response to a probing question."""
         self.performance_scores.append(score)
 
     def get_mastery_summary(self) -> dict:

@@ -1,74 +1,44 @@
 """
-Mastery Evaluator Prompt — generates the final concept mastery report.
+Phase 3 Prompts — Formatting the final reports depending on the chosen mode.
 """
 
-MASTERY_EVALUATOR_PROMPT = """You are an expert evaluator for a debate-based concept mastery system. The user just completed a debate session. Your task is to produce a detailed, SPECIFIC mastery report.
+DEBATE_REPORT_PROMPT = """You are an expert debate coach evaluating a user's performance in a Debate on the topic: "{topic}".
+The user's stance was: "{user_position}".
+The AI's stance was: "{ai_position}".
 
-CRITICAL RULES:
-1. CITE SPECIFIC TURN NUMBERS and exact claims the user made.
-2. Two different users who argued differently MUST get completely different reports.
-3. Do NOT give generic advice like "study more about this topic."
-4. Every strength, gap, and recommendation must reference something specific from the session.
-5. The overall score should reflect actual performance, not participation.
+Here is a human-readable summary of the entire debate:
+{clean_session_log}
 
-SESSION DATA:
-
-Topic: {topic}
-User's Position: {user_position}
-AI's Position: {ai_position}
-Total Turns: {total_turns}
-Session Duration: {session_duration}
-
-FULL SESSION LOG (every turn with parsed arguments, scores, and fallacies):
-{session_log}
-
-CONCEPT GRAPH COVERAGE:
-- Concepts demonstrated strongly: {strong_concepts}
-- Concepts demonstrated weakly: {weak_concepts}
-- Concepts never addressed: {unaddressed_concepts}
-
-FALLACY SUMMARY:
+Here is a summary of the logical fallacies the user committed (if any):
 {fallacy_summary}
 
-STANCE BEHAVIOR SUMMARY:
-- New arguments introduced: {new_argument_count}
-- Restatements (same point repeated): {restatement_count}
-- Emotional pushbacks: {emotional_count}
-- Concessions with reasoning: {concession_count}
+Based on the debate log, generate a comprehensive "Debate Evaluation Report" formatted in Markdown.
+Your report MUST include the following sections:
 
-Generate a structured mastery report in this exact format:
+1. **Overall Performance**: A brief summary of how well they defended their stance.
+2. **Arguments Left Behind**: What strong arguments for "{user_position}" did the user fail to mention?
+3. **Line-by-Line Fallacy Breakdown**: Discuss the specific fallacies they committed, why they were fallacious, and how they harmed their argument.
+4. **Presentation & Framing Strategy**: How could the user have framed their arguments more effectively or persuasively?
+5. **Advanced Tactic - Trapping the Opponent**: Provide a specific, logical debate "trap" the user could have used against the AI's stance ("{ai_position}") to corner it.
 
-CONCEPT MASTERY REPORT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Topic: [topic]
-Session: [X turns] | [Y minutes]
+Output the final report directly. Do not include any JSON or preamble.
+"""
 
-OVERALL SCORE: [0-100]/100
+TEST_REPORT_PROMPT = """You are an expert educator evaluating a user's performance on a Knowledge Test regarding the topic: "{topic}".
 
-STRENGTHS
-  ✓ [Specific strength citing turn numbers and exact claims]
-  ✓ [Another specific strength]
-  ✓ [Another specific strength]
+Here is a human-readable summary of the test questions, the user's answers, and their scores:
+{clean_session_log}
 
-GAPS IDENTIFIED
-  ✗ [Specific gap — what concept was weak/avoided, citing turns]
-  ✗ [Another specific gap]
-  ✗ [Another specific gap]
+Based on the test log, generate a comprehensive "Knowledge Mastery Report" formatted in Markdown.
+Your report MUST include the following sections:
 
-FALLACIES DETECTED
-  ⚠ [Fallacy type — Turn X: brief description]
-  (or "No logical fallacies detected" if none)
+1. **Cumulative Grade**: Calculate their overall performance out of 100 based on the scores provided.
+2. **Overall Knowledge Assessment**: A brief summary of their current level of understanding of "{topic}".
+3. **Point-by-Point Analysis**: For EVERY question asked, provide:
+   - The user's score.
+   - What they correctly understood.
+   - The EXACT missing knowledge they needed to score a perfect 10/10. Teach them this concept clearly.
+4. **Study Recommendations**: 2-3 specific sub-topics they should focus on studying to master this subject.
 
-ARGUMENT QUALITY BREAKDOWN
-  New arguments introduced: [count] — [assessment]
-  Restatements: [count] — [assessment]
-  Emotional pushbacks: [count] — [assessment]
-  Concessions with reasoning: [count] — [assessment]
-
-RECOMMENDED STUDY AREAS
-  → [Specific topic/concept to study, based on identified gaps]
-  → [Another specific recommendation]
-  → [Another specific recommendation]
-
-Return the report as plain text (not JSON).
+Output the final report directly. Do not include any JSON or preamble.
 """
