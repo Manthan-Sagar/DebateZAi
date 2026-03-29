@@ -49,5 +49,5 @@ ollama_debug2.txt
 ollama_debug3.txt
 ollama_debug4.txt
 pytest_out.txt
-.env.example
+
 null
