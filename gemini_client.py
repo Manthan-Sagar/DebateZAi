@@ -62,7 +62,7 @@ def _call_ollama_raw(prompt: str, expect_json: bool = False) -> str:
         payload["format"] = "json"
 
     try:
-        resp = requests.post(url, json=payload, timeout=120)
+        resp = requests.post(url, json=payload, timeout=300)
         resp.raise_for_status()
         return resp.json()["response"].strip()
     except requests.ConnectionError:
@@ -72,7 +72,7 @@ def _call_ollama_raw(prompt: str, expect_json: bool = False) -> str:
         )
     except requests.Timeout:
         raise TimeoutError(
-            f"Ollama request timed out after 120s. "
+            f"Ollama request timed out after 300s. "
             f"Your model ({OLLAMA_MODEL}) may be too slow for this prompt."
         )
 

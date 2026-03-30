@@ -1,6 +1,6 @@
 """
 Rebuttal Generator — generates targeted rebuttals using strategy selection.
-Three strategies: counterevidence, scope_reduction, causal_challenge.
+Five strategies: counterevidence, scope_reduction, causal_challenge, reframe, concede_and_pivot.
 """
 
 import json
@@ -16,6 +16,8 @@ def generate_rebuttal(
     rebuttal_strategy: str,
     conversation_history: list,
     stance_type: str = "default",
+    argument_type: str = "empirical",
+    turn_objective: str = "Probe",
 ) -> str:
     """
     Generate a targeted rebuttal for the user's argument.
@@ -25,9 +27,11 @@ def generate_rebuttal(
         ai_position: AI's assigned position.
         parsed_argument: Output from argument_parser.
         weakness_scores: Output from weakness_scorer.
-        rebuttal_strategy: One of "counterevidence", "scope_reduction", "causal_challenge".
+        rebuttal_strategy: One of the 5 strategies.
         conversation_history: List of previous turns [{"role": "user"|"ai", "content": str}].
-        stance_type: From stance classifier — "new_argument", "restatement", etc.
+        stance_type: From stance classifier.
+        argument_type: From weakness scorer (risk_based, predictive, etc).
+        turn_objective: Strategy goal for the current turn (Probe, Weaken, Trap).
 
     Returns:
         The AI's rebuttal as a string.
@@ -49,6 +53,13 @@ def generate_rebuttal(
         for turn in conversation_history[-6:]  # Last 6 turns for context
     ) if conversation_history else "(First turn)"
 
+    # Extract AI's past arguments to prevent looping
+    ai_past = [
+        turn['content'][:150] for turn in conversation_history
+        if turn['role'] == 'ai'
+    ]
+    ai_past_arguments = "\n".join(f"- {arg}" for arg in ai_past) if ai_past else "(No previous arguments)"
+
     # Get stance instruction
     stance_instruction = STANCE_INSTRUCTIONS.get(stance_type, STANCE_INSTRUCTIONS["default"])
 
@@ -59,8 +70,11 @@ def generate_rebuttal(
         weakness_reasoning=weakness_reasoning,
         topic=topic,
         main_claim=parsed_argument["main_claim"],
+        argument_type=argument_type,
         argument_json=json.dumps(parsed_argument, indent=2),
         conversation_history=history_str,
+        ai_past_arguments=ai_past_arguments,
+        turn_objective=turn_objective,
         stance_instruction=stance_instruction,
     )
 

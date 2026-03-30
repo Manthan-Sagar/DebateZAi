@@ -1,74 +1,53 @@
 """
-Mastery Evaluator Prompt — generates the final concept mastery report.
+Mastery Evaluator Prompts — Phase 3 Reporting.
+Now with symmetric, 4-dimensional scoring (Logic, Evidence, Framing, Adaptability).
 """
 
-MASTERY_EVALUATOR_PROMPT = """You are an expert evaluator for a debate-based concept mastery system. The user just completed a debate session. Your task is to produce a detailed, SPECIFIC mastery report.
+TEST_REPORT_PROMPT = """You are an expert tutor evaluating a user's performance on a Knowledge Test about: "{topic}".
+
+Here is a human-readable summary of the entire test session:
+{clean_session_log}
+
+Based on the test log, generate a comprehensive "Knowledge Mastery Report" formatted in Markdown.
+
+Your report MUST include the following sections:
+
+1. **Overall Grade**: Give a final score out of 10 based on the cumulative performance. A "10/10" means complete, nuanced mastery lacking nothing.
+2. **Concept Coverage**: What key concepts did the user demonstrate strong understanding of?
+3. **Knowledge Gaps**: What specific concepts or detailed nuances was the user unable to explain or missing from their answers?
+4. **Pedagogical Feedback (Point-by-Point)**: Briefly review each question asked, the user's answer, and provide the "gold standard" addition that would have made their answer perfect.
+5. **Study Guide**: Recommend 3 specific sub-topics or angles the user should study next to achieve true mastery of the subject.
+
+Output the final report directly. Do not include any JSON or preamble.
+"""
+
+DEBATE_REPORT_PROMPT = """You are an elite debate referee evaluating a user's performance in a Debate on the topic: "{topic}".
+The user's stance was: "{user_position}".
+The AI's stance was: "{ai_position}".
+
+Here is the clean transcript of the entire debate:
+{clean_session_log}
+
+IMPORTANT: You must independently analyze both the user's and the AI's arguments. Judge the debate symmetrically and fairly from the raw text alone.
+
+Generate a comprehensive "Debate Evaluation Report" formatted in Markdown. Your report MUST include:
+
+1. **The Verdict**: A 2-3 sentence summary of the debate's trajectory. Who controlled the frame? Who had the stronger logic?
+2. **Symmetric Scoring (Out of 10)**: Grade the USER on 4 dimensions:
+   - 🛠️ **Logical Rigor**: (Strength of conceptual/structural arguments)
+   - 📊 **Evidence Strength**: (Quality and relevance of data/studies cited)
+   - 🎭 **Framing Quality**: (Control of the narrative, avoiding the opponent's frame)
+   - 🤺 **Adaptability**: (How well they handled pressure and refined their arguments)
+3. **The User's Best Moment**: Highlight the specific turn/argument where the user was most persuasive or strategically sound.
+4. **Logical & Strategic Weaknesses**: Point out genuine flaws in the user's reasoning. Differentiate between a weak empirical claim vs. a weak conceptual link. DO NOT invent fallacies.
+5. **The AI's Weaknesses (Symmetry Check)**: Point out where the AI's argument was weak, over-reliant on vague studies, or where it failed to disprove the user's structural/risk-based points.
+6. **The Missed Traps**: Provide a specific debate "trap" or angle the user *should* have used to completely corner the AI's stance.
 
 CRITICAL RULES:
-1. CITE SPECIFIC TURN NUMBERS and exact claims the user made.
-2. Two different users who argued differently MUST get completely different reports.
-3. Do NOT give generic advice like "study more about this topic."
-4. Every strength, gap, and recommendation must reference something specific from the session.
-5. The overall score should reflect actual performance, not participation.
+- Be symmetric: Do not demand empirical data for a risk-based/conceptual argument.
+- Citing institutional reports (WEF, IPCC) IS valid evidence.
+- Argument refinement across turns IS good debate practice, NOT a logical flaw.
+- If the AI was superficial ("study spamming"), call it out in section 5.
 
-SESSION DATA:
-
-Topic: {topic}
-User's Position: {user_position}
-AI's Position: {ai_position}
-Total Turns: {total_turns}
-Session Duration: {session_duration}
-
-FULL SESSION LOG (every turn with parsed arguments, scores, and fallacies):
-{session_log}
-
-CONCEPT GRAPH COVERAGE:
-- Concepts demonstrated strongly: {strong_concepts}
-- Concepts demonstrated weakly: {weak_concepts}
-- Concepts never addressed: {unaddressed_concepts}
-
-FALLACY SUMMARY:
-{fallacy_summary}
-
-STANCE BEHAVIOR SUMMARY:
-- New arguments introduced: {new_argument_count}
-- Restatements (same point repeated): {restatement_count}
-- Emotional pushbacks: {emotional_count}
-- Concessions with reasoning: {concession_count}
-
-Generate a structured mastery report in this exact format:
-
-CONCEPT MASTERY REPORT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Topic: [topic]
-Session: [X turns] | [Y minutes]
-
-OVERALL SCORE: [0-100]/100
-
-STRENGTHS
-  ✓ [Specific strength citing turn numbers and exact claims]
-  ✓ [Another specific strength]
-  ✓ [Another specific strength]
-
-GAPS IDENTIFIED
-  ✗ [Specific gap — what concept was weak/avoided, citing turns]
-  ✗ [Another specific gap]
-  ✗ [Another specific gap]
-
-FALLACIES DETECTED
-  ⚠ [Fallacy type — Turn X: brief description]
-  (or "No logical fallacies detected" if none)
-
-ARGUMENT QUALITY BREAKDOWN
-  New arguments introduced: [count] — [assessment]
-  Restatements: [count] — [assessment]
-  Emotional pushbacks: [count] — [assessment]
-  Concessions with reasoning: [count] — [assessment]
-
-RECOMMENDED STUDY AREAS
-  → [Specific topic/concept to study, based on identified gaps]
-  → [Another specific recommendation]
-  → [Another specific recommendation]
-
-Return the report as plain text (not JSON).
+Output the final report directly. Do not include any JSON or preamble.
 """

@@ -13,7 +13,7 @@ Usage:
 
 import json
 import concurrent.futures
-from config import DEBATE_TURNS, PROBE_TURNS
+from config import DEBATE_TURNS
 from modules.argument_parser import parse_argument
 from modules.weakness_scorer import score_weaknesses, get_attack_strategy
 from modules.fallacy_detector import detect_fallacies
@@ -23,6 +23,7 @@ from modules.consistency_tracker import ConsistencyTracker
 from modules.stance_classifier import classify_stance
 from modules.mastery_evaluator import MasteryEvaluator
 from gemini_client import call_gemini_text
+from modules.conclusion_detector import check_if_concluding
 
 
 def get_ai_position(topic: str, user_position: str) -> str:
@@ -31,6 +32,7 @@ def get_ai_position(topic: str, user_position: str) -> str:
 The user's position is: "{user_position}"
 
 Generate a clear, concise opposing position that the AI will defend throughout the debate.
+CRITICAL: Limit your response to 2 sentences maximum to keep the debate fast.
 Return only the opposing position statement, nothing else."""
 
     return call_gemini_text(prompt)
@@ -52,10 +54,9 @@ def run_debate_session():
     ai_position = get_ai_position(topic, user_position)
     print(f"\n🤖 AI's position: {ai_position}\n")
 
-    # Initialize all modules
+    # Initialize core modules
     adaptive_engine = AdaptiveEngine()
     consistency_tracker = ConsistencyTracker()
-    evaluator = MasteryEvaluator(topic, user_position, ai_position)
 
     # Generate concept graph for the topic
     print("📊 Building concept graph...\n")
@@ -66,164 +67,235 @@ def run_debate_session():
     all_fallacies = []
 
     # ════════════════════════════════════════════
-    # PHASE 1: DEBATE MODE
-    # ════════════════════════════════════════════
-    print("=" * 50)
-    print("  PHASE 1: DEBATE MODE")
-    print("  (AI will challenge your position)")
-    print("=" * 50 + "\n")
-
-    for i in range(DEBATE_TURNS):
-        turn_number += 1
-
-        # Get user input
-        user_input = input(f"\n💬 [Turn {turn_number}] Your argument: ").strip()
-        if not user_input:
-            continue
-
-        # ── Pipeline: Parse → Score → Detect → Classify → Rebuttal ──
-        print("  🔍 Analyzing your argument...")
-
-        # We can run independent tasks concurrently to save time
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            # 1 & 2. Task A: Parse and then score (sequential dependency)
-            def parse_and_score(ui, t):
-                p = parse_argument(ui)
-                s = score_weaknesses(p, t)
-                return p, s
-            
-            future_parse_score = executor.submit(parse_and_score, user_input, topic)
-            
-            # 3. Task B: Detect fallacies
-            future_fallacies = executor.submit(detect_fallacies, user_input, ai_position)
-            
-            # 4. Task C: Classify stance
-            def get_stance(ui, ch):
-                if not ch:
-                    return "new_argument"
-                return classify_stance(ui, ch)
-                
-            future_stance = executor.submit(get_stance, user_input, conversation_history)
-            
-            # Wait for all results to complete
-            parsed, weakness_scores = future_parse_score.result()
-            fallacies = future_fallacies.result()
-            stance_type = future_stance.result()
-
-        all_fallacies.extend(fallacies.get("fallacies", []))
-
-        # 5. Select attack strategy
-        strategy = get_attack_strategy(
-            weakness_scores.get("scored_premises", []),
-            weakness_scores.get("most_vulnerable_premise_index", 0),
-        )
-
-        # 6. Check consistency
-        consistency_tracker.record_user_position(
-            parsed["main_claim"], parsed["premises"]
-        )
-        user_consistency = consistency_tracker.check_user_consistency({
-            "claim": parsed["main_claim"],
-            "premises": parsed["premises"],
-        })
-
-        # 7. Generate rebuttal
-        rebuttal = generate_rebuttal(
-            topic=topic,
-            ai_position=ai_position,
-            parsed_argument=parsed,
-            weakness_scores=weakness_scores,
-            rebuttal_strategy=strategy,
-            conversation_history=conversation_history,
-            stance_type=stance_type,
-        )
-
-        consistency_tracker.record_ai_position(rebuttal[:200])
-
-        # ── Display ──
-        if fallacies.get("fallacies"):
-            for f in fallacies["fallacies"]:
-                print(f"  ⚠️  Fallacy detected: {f.get('type', 'unknown')} — {f.get('explanation', '')}")
-
-        if not user_consistency.get("is_consistent", True):
-            print(f"  🔄 Contradiction detected: {user_consistency.get('contradiction', '')}")
-
-        print(f"\n🤖 [AI]: {rebuttal}\n")
-
-        # ── Record ──
-        conversation_history.append({"role": "user", "content": user_input})
-        conversation_history.append({"role": "ai", "content": rebuttal})
-
-        evaluator.record_turn(
-            turn_number, user_input, rebuttal,
-            parsed, weakness_scores, fallacies, stance_type
-        )
-
-    # ════════════════════════════════════════════
-    # PHASE 2: PROBE MODE
+    # MODE SELECTION
     # ════════════════════════════════════════════
     print("\n" + "=" * 50)
-    print("  PHASE 2: PROBE MODE")
-    print("  (AI will test your understanding)")
+    print("  SELECT MODE")
+    print("  1: Debate Mode (AI challenges your position)")
+    print("  2: Knowledge Test Mode (AI probes your understanding)")
     print("=" * 50 + "\n")
 
-    for i in range(PROBE_TURNS):
-        turn_number += 1
+    while True:
+        mode_choice = input("Enter 1 or 2: ").strip()
+        if mode_choice in ['1', '2']:
+            break
+        print("Invalid choice. Please enter 1 or 2.")
+        
+    evaluator = MasteryEvaluator(topic, user_position, ai_position, mode=mode_choice)
 
-        # Generate probing question
-        probe = adaptive_engine.generate_probing_question(
-            topic, conversation_history, all_fallacies
-        )
+    if mode_choice == '1':
+        # ════════════════════════════════════════════
+        # PHASE 1: DEBATE MODE
+        # ════════════════════════════════════════════
+        print("\n=" * 50)
+        print("  PHASE 1: DEBATE MODE")
+        print("  (AI will challenge your position)")
+        print("=" * 50 + "\n")
 
-        question = probe.get("question", "Can you elaborate on your position?")
-        print(f"\n🔬 [Probe {i+1}] {question}")
-        print(f"   (targeting: {probe.get('target_concept', 'general')}, "
-              f"difficulty: {probe.get('difficulty', 'intermediate')})")
+        for i in range(DEBATE_TURNS):
+            turn_number += 1
 
-        # Get user response
-        user_input = input(f"\n💬 [Turn {turn_number}] Your answer: ").strip()
-        if not user_input:
-            continue
+            # Get user input
+            user_input = input(f"\n💬 [Turn {turn_number}] Your argument: ").strip()
+            if not user_input:
+                continue
 
-        # Parse and evaluate response
-        parsed = parse_argument(user_input)
-        fallacies = detect_fallacies(user_input, ai_position)
-        all_fallacies.extend(fallacies.get("fallacies", []))
-        weakness_scores = score_weaknesses(parsed, topic)
+            # ── Pipeline: Parse → Score → Detect → Classify → Rebuttal ──
+            print("  🔍 Analyzing your argument...")
 
-        # Score the response quality (simple heuristic for now)
-        quality_score = 0.5
-        if parsed.get("evidence_cited"):
-            quality_score += 0.2
-        if parsed.get("confidence_language") == "low":
-            quality_score -= 0.1
-        if not fallacies.get("fallacies"):
-            quality_score += 0.1
-        adaptive_engine.record_response_quality(min(1.0, max(0.0, quality_score)))
+            # We can run independent tasks concurrently to save time
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # 1 & 2. Task A: Parse and then score (sequential dependency)
+                def parse_and_score(ui, t):
+                    p = parse_argument(ui)
+                    s = score_weaknesses(p, t)
+                    return p, s
+                
+                future_parse_score = executor.submit(parse_and_score, user_input, topic)
+                
+                # 3. Task B: Detect fallacies
+                future_fallacies = executor.submit(detect_fallacies, user_input, ai_position)
+                
+                # 4. Task C: Classify stance
+                def get_stance(ui, ch):
+                    if not ch:
+                        return "new_argument"
+                    return classify_stance(ui, ch)
+                    
+                future_stance = executor.submit(get_stance, user_input, conversation_history)
+                
+                # Task D: Check for early conclusion
+                future_concluding = executor.submit(check_if_concluding, user_input)
+                
+                # Wait for all results to complete
+                parsed, weakness_scores = future_parse_score.result()
+                fallacies = future_fallacies.result()
+                stance_type = future_stance.result()
+                is_concluding = future_concluding.result()
 
-        # AI feedback on the answer
-        feedback_prompt = f"""The user was asked this probing question about {topic}:
-"{question}"
+            if is_concluding:
+                print("\n🏁 I sense you are wrapping up the debate. Let's move on to your evaluation report!")
+                # Record final turn before breaking
+                conversation_history.append({"role": "user", "content": user_input})
+                evaluator.record_turn(
+                    turn_number, user_input, "User concluded the debate.",
+                    parsed, weakness_scores, fallacies, stance_type
+                )
+                break
 
-They answered: "{user_input}"
+            all_fallacies.extend(fallacies.get("fallacies", []))
 
-Give a brief (2-3 sentence) evaluation of their answer. Point out what was strong and what was missing. Be specific."""
+            # 5. Select attack strategy
+            strategy = get_attack_strategy(
+                weakness_scores.get("scored_premises", []),
+                weakness_scores.get("most_vulnerable_premise_index", 0),
+            )
 
-        feedback = call_gemini_text(feedback_prompt)
-        print(f"\n🤖 [AI]: {feedback}\n")
+            # 6. Check consistency
+            consistency_tracker.record_user_position(
+                parsed["main_claim"], parsed["premises"]
+            )
+            user_consistency = consistency_tracker.check_user_consistency({
+                "claim": parsed["main_claim"],
+                "premises": parsed["premises"],
+            })
 
-        conversation_history.append({"role": "user", "content": user_input})
-        conversation_history.append({"role": "ai", "content": feedback})
+            # 7. Calculate Turn Objective and Generate summary
+            if turn_number == 1:
+                turn_objective = "Probe"
+            elif turn_number < DEBATE_TURNS:
+                turn_objective = "Weaken"
+            else:
+                turn_objective = "Trap"
 
-        evaluator.record_turn(
-            turn_number, user_input, feedback,
-            parsed, weakness_scores, fallacies, "probe_response"
-        )
+            rebuttal = generate_rebuttal(
+                topic=topic,
+                ai_position=ai_position,
+                parsed_argument=parsed,
+                weakness_scores=weakness_scores,
+                rebuttal_strategy=strategy,
+                conversation_history=conversation_history,
+                stance_type=stance_type,
+                argument_type=weakness_scores.get("argument_type", "empirical"),
+                turn_objective=turn_objective,
+            )
+
+            consistency_tracker.record_ai_position(rebuttal[:200])
+
+            # ── Display ──
+            if fallacies.get("fallacies"):
+                for f in fallacies["fallacies"]:
+                    print(f"  ⚠️  Fallacy detected: {f.get('type', 'unknown')} — {f.get('explanation', '')}")
+
+            change_type = user_consistency.get("change_type", "consistent")
+            if change_type == "contradiction":
+                print(f"  🔄 Contradiction detected: {user_consistency.get('contradiction', '')}")
+            elif change_type == "refinement":
+                print(f"  📝 Argument refined: good evolution of your position.")
+
+            print(f"\n🤖 [AI]: {rebuttal}\n")
+
+            # ── Record ──
+            conversation_history.append({"role": "user", "content": user_input})
+            conversation_history.append({"role": "ai", "content": rebuttal})
+
+            evaluator.record_turn(
+                turn_number, user_input, rebuttal,
+                parsed, weakness_scores, fallacies, stance_type
+            )
+
+    elif mode_choice == '2':
+        # ════════════════════════════════════════════
+        # PHASE 2: PROBE MODE
+        # ════════════════════════════════════════════
+        print("\n=" * 50)
+        print("  PHASE 2: KNOWLEDGE TEST MODE")
+        print("  (AI will test your understanding)")
+        print("=" * 50 + "\n")
+
+        print("Choose your confidence level for this topic:")
+        print("  1: Beginner (3 Foundational Questions)")
+        print("  2: Medium (6 Questions: 2 Foundational, 3 Intermediate, 1 Advanced)")
+        print("  3: Advanced (10 Questions)")
+        while True:
+            conf_choice = input("Enter 1, 2, or 3: ").strip()
+            if conf_choice in ['1', '2', '3']:
+                break
+            print("Invalid choice. Please enter 1, 2, or 3.")
+
+        if conf_choice == '1':
+            difficulty_sequence = ['foundational'] * 3
+        elif conf_choice == '2':
+            difficulty_sequence = ['foundational', 'foundational', 'intermediate', 'intermediate', 'intermediate', 'advanced']
+        else:
+            difficulty_sequence = ['foundational', 'foundational', 'intermediate', 'intermediate', 'intermediate', 'intermediate', 'advanced', 'advanced', 'advanced', 'advanced']
+
+        for test_difficulty in difficulty_sequence:
+            turn_number += 1
+
+            # Generate probing question
+            probe = adaptive_engine.generate_probing_question(
+                topic, conversation_history, all_fallacies, target_difficulty=test_difficulty
+            )
+
+            question = probe.get("question", "Can you elaborate on your position?")
+            print(f"\n🔬 [Probe {turn_number}] {question}")
+            print(f"   (targeting: {probe.get('target_concept', 'general')}, "
+                  f"difficulty: {test_difficulty})")
+
+            # Get user response
+            user_input = input(f"\n💬 Your answer: ").strip()
+            if not user_input:
+                continue
+
+            is_concluding = check_if_concluding(user_input)
+            if is_concluding:
+                print("\n🏁 Ending the knowledge test early. Let's move on to your evaluation report!")
+                conversation_history.append({"role": "user", "content": user_input})
+                evaluator.record_turn(
+                    turn_number, user_input, "User concluded the test.",
+                    {"main_claim": "User Answer", "premises": [], "confidence_language": "medium", "evidence_cited": False}, 
+                    {}, {"fallacies": []}, "probe_response"
+                )
+                break
+
+            # Parse fallacies to keep track
+            fallacies = detect_fallacies(user_input, ai_position)
+            all_fallacies.extend(fallacies.get("fallacies", []))
+            
+            # Evaluate using structured grading prompt
+            print("  🔍 Grading your answer...")
+            try:
+                evaluation = adaptive_engine.evaluate_answer(topic, question, user_input)
+                score = float(evaluation.get("score", 5.0))
+                what_was_good = evaluation.get("what_was_good", "Good attempt.")
+                what_to_add = evaluation.get("what_to_add", "Consider expanding your points.")
+            except Exception:
+                score = 5.0
+                what_was_good = "Could not parse evaluation."
+                what_to_add = "Try to be more detailed."
+
+            adaptive_engine.record_response_quality(score)
+
+            # Display structured feedback
+            print(f"\n✅ SCORE: {score}/10")
+            print(f"👍 WHAT WAS GOOD: {what_was_good}")
+            print(f"📈 WHAT TO ADD: {what_to_add}\n")
+
+            conversation_history.append({"role": "user", "content": user_input})
+            conversation_history.append({"role": "ai", "content": f"Score: {score}/10\nGood: {what_was_good}\nAdd: {what_to_add}"})
+
+            # Evaluator backwards compatibility requires parsed args, so we provide dummies for phase 2
+            parsed_dummy = {"main_claim": "User Answer", "premises": [], "confidence_language": "medium", "evidence_cited": False}
+            evaluator.record_turn(
+                turn_number, user_input, f"Score: {score}/10\nGood: {what_was_good}\nAdd: {what_to_add}",
+                parsed_dummy, {}, fallacies, "probe_response"
+            )
 
     # ════════════════════════════════════════════
     # PHASE 3: EVALUATION MODE
     # ════════════════════════════════════════════
-    print("\n" + "=" * 50)
+    print("\n=" * 50)
     print("  PHASE 3: EVALUATION")
     print("  (Generating your mastery report...)")
     print("=" * 50 + "\n")
@@ -233,7 +305,7 @@ Give a brief (2-3 sentence) evaluation of their answer. Point out what was stron
 
     print(report)
     print("\n" + "━" * 60)
-    print("  Session complete. Thank you for debating!")
+    print("  Session complete. Thank you!")
     print("━" * 60 + "\n")
 
 

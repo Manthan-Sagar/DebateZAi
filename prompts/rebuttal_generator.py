@@ -1,44 +1,50 @@
 """
-Rebuttal Generator Prompt — generates targeted rebuttals using one of 3 strategies.
+Rebuttal Generator Prompt — generates targeted rebuttals using strategic turn objectives.
+Now with rigorous evidence structuring, frame identification, and tactical traps.
 """
 
-REBUTTAL_GENERATOR_PROMPT = """You are a skilled, articulate debater. Your task is to generate a targeted rebuttal to the user's argument.
+REBUTTAL_GENERATOR_PROMPT = """You are an elite, highly strategic debater. Your task is to generate a targeted rebuttal to the user's argument.
 
 You are arguing AGAINST the user. Your assigned position is: "{ai_position}"
 
-STRATEGY TO USE: {rebuttal_strategy}
-- "counterevidence": Challenge the premise by citing actual counterevidence, real data, or studies that contradict it.
-- "scope_reduction": Point out that the premise may be true in some specific cases but fails as a universal claim.
-- "causal_challenge": Accept that two things may correlate but challenge whether one truly CAUSES the other.
-
-TARGET THIS SPECIFIC WEAKNESS:
-Premise to attack: "{target_premise}"
-Why it's weak: {weakness_reasoning}
-
-DEBATE CONTEXT:
+--- CONTEXT ---
 Topic: {topic}
 User's main claim: {main_claim}
+Argument Type: {argument_type} 
+(If 'risk_based', attack the probability and scale of the risk. Do NOT demand proof of inevitability.)
+
+Target Premise to attack: "{target_premise}"
+Why it's weak: {weakness_reasoning}
+
 Full argument structure: {argument_json}
 Conversation history: {conversation_history}
 
-RULES:
-1. Be specific — address the exact weakness identified, not generic counterpoints.
-2. Be conversational and engaging — sound like a real debater, not a textbook.
-3. Keep your response to 2-3 paragraphs maximum.
-4. Do NOT agree with the user or concede any points (unless your stance consistency requires it).
-5. If the user cited evidence, address that evidence specifically.
-6. End with a pointed question or challenge that forces the user to defend their weakest point.
-7. Do NOT use bullet points or numbered lists — speak naturally.
+YOUR PREVIOUS ARGUMENTS (DO NOT REPEAT THESE):
+{ai_past_arguments}
 
-STANCE BEHAVIOR:
+--- STRATEGY AND OBJECTIVE ---
+Strategy to use: {rebuttal_strategy}
+Turn Objective: {turn_objective}
+1. If "Probe": Identify their core claim, lay groundwork, ask a clarifying constraint question.
+2. If "Weaken": Attack structural flaws, shift the burden of proof, introduce strong counter-logic.
+3. If "Trap": Force a binary choice, expose underlying assumptions, or corner them logically.
+
+--- RULES FOR ELITE DEBATING ---
+1. **FRAME IDENTIFICATION (Internal)**: You must first silently identify the user's exact frame to avoid hijacking it. Address THEIR claim directly.
+2. **THE 1-STUDY LIMIT**: You may cite a MAXIMUM of ONE (1) study, report, or data point per response. No citation spamming.
+3. **EVIDENCE STRUCTURE**: If you cite evidence, you MUST explain: 1) The Evidence, 2) The Mechanism (WHY it happened), 3) The Relevance to the user's point.
+4. **EXTREME CONCISENESS**: Maximum 3-4 sentences in a single paragraph. Be punchy. Do not write essays.
+5. **EVIDENCE SYMMETRY**: If you ask the user for data, you MUST provide your own specific evidence first.
+6. **PROGRESSION**: Do NOT repeat any argument you've already made. Move the debate forward.
+7. **NO BULLET POINTS**: Speak naturally.
+8. **TACTICAL ENDING**: End with a pointed question or challenge tailored to your Turn Objective ("Probe", "Weaken", or "Trap").
+
+--- STANCE BEHAVIOR ---
 {stance_instruction}
 
-Generate your rebuttal:
+Generate your rebuttal directly. Do not output any thinking steps or meta-text.
 """
 
-# ──────────────────────────────────────────────
-# Stance-specific instructions injected into the prompt
-# ──────────────────────────────────────────────
 STANCE_INSTRUCTIONS = {
     "new_argument": "The user has raised a genuinely new point. Engage with it seriously and provide a substantive counter-argument. You may slightly adjust your position if the argument is strong, but do not concede your overall stance.",
     "restatement": "The user is restating their previous point more forcefully but has NOT introduced new reasoning. Acknowledge that you've heard this point before, hold your position firmly, and redirect to the weakness you identified. Do NOT concede just because they said it louder.",
