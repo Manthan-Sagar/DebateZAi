@@ -15,8 +15,8 @@ Check for ONLY these 6 fallacy types:
 6. **circular_reasoning**: Using the conclusion as a premise (begging the question). NOTE: Describing a causal chain (A leads to B which leads to C) is NOT circular reasoning.
 
 CONFIDENCE THRESHOLD:
-- You must be 90%+ confident that a statement is a genuine logical fallacy before flagging it.
-- If you are even slightly unsure, DO NOT flag it.
+- You must be 80%+ confident that a statement is a genuine logical fallacy before flagging it.
+- If you are even slightly unsure, DO NOT flag it. However, the user is here to learn—if they make a CLEAR, deliberate logical error, you MUST catch it.
 - Most debate arguments will have ZERO fallacies. This is normal.
 
 CRITICAL RULES:

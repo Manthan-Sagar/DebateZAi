@@ -16,6 +16,8 @@ def generate_rebuttal(
     rebuttal_strategy: str,
     conversation_history: list,
     stance_type: str = "default",
+    argument_type: str = "empirical",
+    turn_objective: str = "Probe",
 ) -> str:
     """
     Generate a targeted rebuttal for the user's argument.
@@ -28,6 +30,8 @@ def generate_rebuttal(
         rebuttal_strategy: One of the 5 strategies.
         conversation_history: List of previous turns [{"role": "user"|"ai", "content": str}].
         stance_type: From stance classifier.
+        argument_type: From weakness scorer (risk_based, predictive, etc).
+        turn_objective: Strategy goal for the current turn (Probe, Weaken, Trap).
 
     Returns:
         The AI's rebuttal as a string.
@@ -66,9 +70,11 @@ def generate_rebuttal(
         weakness_reasoning=weakness_reasoning,
         topic=topic,
         main_claim=parsed_argument["main_claim"],
+        argument_type=argument_type,
         argument_json=json.dumps(parsed_argument, indent=2),
         conversation_history=history_str,
         ai_past_arguments=ai_past_arguments,
+        turn_objective=turn_objective,
         stance_instruction=stance_instruction,
     )
 

@@ -160,7 +160,14 @@ def run_debate_session():
                 "premises": parsed["premises"],
             })
 
-            # 7. Generate rebuttal
+            # 7. Calculate Turn Objective and Generate summary
+            if turn_number == 1:
+                turn_objective = "Probe"
+            elif turn_number < DEBATE_TURNS:
+                turn_objective = "Weaken"
+            else:
+                turn_objective = "Trap"
+
             rebuttal = generate_rebuttal(
                 topic=topic,
                 ai_position=ai_position,
@@ -169,6 +176,8 @@ def run_debate_session():
                 rebuttal_strategy=strategy,
                 conversation_history=conversation_history,
                 stance_type=stance_type,
+                argument_type=weakness_scores.get("argument_type", "empirical"),
+                turn_objective=turn_objective,
             )
 
             consistency_tracker.record_ai_position(rebuttal[:200])
