@@ -185,7 +185,12 @@ def run_debate_session():
             # ── Display ──
             if fallacies.get("fallacies"):
                 for f in fallacies["fallacies"]:
-                    print(f"  ⚠️  Fallacy detected: {f.get('type', 'unknown')} — {f.get('explanation', '')}")
+                    score = f.get('confidence_score', 0.8)
+                    cat = f.get('category', 'soft')
+                    if cat == 'hard' or score >= 0.8:
+                        print(f"  🚨 Logical Issue ({score}): {f.get('type', 'unknown').upper()} — {f.get('explanation', '')}")
+                    else:
+                        print(f"  💡 Possible Weakness ({score}): {f.get('type', 'unknown').upper()} — {f.get('explanation', '')} Want to examine this?")
 
             change_type = user_consistency.get("change_type", "consistent")
             if change_type == "contradiction":

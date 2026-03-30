@@ -17,6 +17,7 @@ build/
 # Model files (too large for git)
 models/stance_model/*.pt
 models/stance_model/*.bin
+models/stance_model/*.safetensors
 models/stance_model/checkpoint-*
 
 # IDE
@@ -51,3 +52,9 @@ ollama_debug4.txt
 pytest_out.txt
 
 null
+data/cmv_labeled.csv
+data/validation_sample_annotations_template.csv
+data/validation_sample_annotations.csv
+data/validation_sample_instructions.txt
+data/validation_sample.csv
+data/validation_sample_stratified.csv

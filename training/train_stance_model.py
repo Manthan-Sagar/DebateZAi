@@ -19,6 +19,24 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
+import torch.nn as nn
+
+class WeightedTrainer(Trainer):
+    def __init__(self, *args, class_weights=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.class_weights = class_weights
+
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+        if self.class_weights is not None:
+            loss_fct = nn.CrossEntropyLoss(weight=self.class_weights.to(model.device))
+        else:
+            loss_fct = nn.CrossEntropyLoss()
+        
+        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        return (loss, outputs) if return_outputs else loss
 from torch.utils.data import Dataset
 
 from config import STANCE_MODEL_DIR, STANCE_LABELS, STANCE_MODEL_NAME, DATA_DIR
@@ -82,10 +100,10 @@ def train():
 
     # Split into train / eval / test
     train_texts, temp_texts, train_labels, temp_labels = train_test_split(
-        texts, labels, test_size=0.2, random_state=42, stratify=labels
+        texts, labels, test_size=0.2, random_state=42
     )
     eval_texts, test_texts, eval_labels, test_labels = train_test_split(
-        temp_texts, temp_labels, test_size=0.5, random_state=42, stratify=temp_labels
+        temp_texts, temp_labels, test_size=0.5, random_state=42
     )
 
     print(f"\nSplit: {len(train_texts)} train / {len(eval_texts)} eval / {len(test_texts)} test\n")
@@ -108,19 +126,29 @@ def train():
         per_device_eval_batch_size=32,
         warmup_steps=200,
         weight_decay=0.01,
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
         logging_steps=50,
         report_to="none",  # Disable wandb etc.
     )
 
+    # Calculate class weights for imbalance
+    from sklearn.utils.class_weight import compute_class_weight
+    classes = np.unique(train_labels)
+    weights = compute_class_weight('balanced', classes=classes, y=train_labels)
+    full_weights = np.ones(len(STANCE_LABELS), dtype=np.float32)
+    for cls, w in zip(classes, weights):
+        full_weights[cls] = w
+    class_weights_tensor = torch.tensor(full_weights, dtype=torch.float32)
+
     # Train
-    trainer = Trainer(
+    trainer = WeightedTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
+        class_weights=class_weights_tensor
     )
 
     print("🚀 Starting training...")

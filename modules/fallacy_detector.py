@@ -29,16 +29,31 @@ def detect_fallacies(user_input: str, ai_position: str) -> dict:
     if "reasoning_quality_note" not in result:
         result["reasoning_quality_note"] = ""
 
-    # Normalize each fallacy entry — local LLMs sometimes use alternate key names
+    # Normalize each fallacy entry
     normalized = []
     for f in result["fallacies"]:
         if not isinstance(f, dict):
             continue
+            
+        score = f.get("confidence_score")
+        if score is None:
+            # Default to strong if the LLM forgot to include it
+            score = 0.8
+            
+        try:
+            score = float(score)
+        except ValueError:
+            score = 0.8
+            
+        if score < 0.6:
+            continue  # Silently ignore low-confidence guesses
+            
         normalized.append({
-            "type": f.get("type") or f.get("fallacy_type") or f.get("name") or "unknown",
+            "category": f.get("category", "soft").lower(),
+            "type": f.get("type") or f.get("name") or "unknown",
+            "confidence_score": score,
             "triggering_sentence": f.get("triggering_sentence") or f.get("sentence") or "",
-            "explanation": f.get("explanation") or f.get("description") or f.get("reason") or "",
-            "severity": f.get("severity") or "medium",
+            "explanation": f.get("explanation") or f.get("description") or "",
         })
     result["fallacies"] = normalized
 

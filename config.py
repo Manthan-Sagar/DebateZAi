@@ -13,6 +13,7 @@ load_dotenv()
 # Set LLM_BACKEND in .env to switch between providers:
 #   "gemini"  → Google Gemini API (rate-limited on free tier)
 #   "ollama"  → Local Ollama server (unlimited, good for debugging)
+#   "groq"    → Groq API (hyper-fast open source models)
 # ──────────────────────────────────────────────
 LLM_BACKEND = os.getenv("LLM_BACKEND", "ollama")  # Default to ollama for dev
 
@@ -29,6 +30,13 @@ GEMINI_TEMPERATURE = 0.7
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 OLLAMA_TEMPERATURE = 0.7
+
+# ──────────────────────────────────────────────
+# Groq API (Ultra-fast cloud LLM)
+# ──────────────────────────────────────────────
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_TEMPERATURE = 0.7
 
 # ──────────────────────────────────────────────
 # Shared LLM Settings
