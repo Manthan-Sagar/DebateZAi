@@ -17,6 +17,7 @@ build/
 # Model files (too large for git)
 models/stance_model/*.pt
 models/stance_model/*.bin
+models/stance_model/*.safetensors
 models/stance_model/checkpoint-*
 
 # IDE
