@@ -22,7 +22,7 @@ def setup_reddit():
     )
 
 
-def collect_cmv_data(limit=500):
+def collect_cmv_data(limit=3000):
     """
     Collect comment threads from r/ChangeMyView.
 
@@ -38,9 +38,9 @@ def collect_cmv_data(limit=500):
     data = []
     processed = 0
 
-    print(f"Collecting CMV data (target: {limit} threads)...")
+    print(f"Collecting CMV data (target: {limit} high-quality comments)...")
 
-    for submission in cmv.hot(limit=limit):
+    for submission in cmv.hot(limit=None):
         try:
             submission.comments.replace_more(limit=0)
 
@@ -60,9 +60,15 @@ def collect_cmv_data(limit=500):
                     "score": comment.score,
                 })
 
+                if len(data) % 500 == 0:
+                    print(f"  Captured {len(data)}/{limit} comments...")
+
+                if len(data) >= limit:
+                    break
+
             processed += 1
-            if processed % 50 == 0:
-                print(f"  Processed {processed}/{limit} submissions, {len(data)} comments labeled")
+            if len(data) >= limit:
+                break
 
         except Exception as e:
             print(f"  Error processing submission: {e}")
