@@ -51,3 +51,9 @@ ollama_debug4.txt
 pytest_out.txt
 
 null
+data/cmv_labeled.csv
+data/validation_sample_annotations_template.csv
+data/validation_sample_annotations.csv
+data/validation_sample_instructions.txt
+data/validation_sample.csv
+data/validation_sample_stratified.csv
