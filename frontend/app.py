@@ -134,11 +134,13 @@ st.markdown("""
 # Helper: AI Position Generator
 # ──────────────────────────────────────────────
 def get_ai_position(topic: str, user_position: str) -> str:
+    from config import LLM_BACKEND
+    limit = "3 to 4 sentences" if LLM_BACKEND == "groq" else "2 sentences"
     prompt = f"""The user wants to debate the topic: "{topic}"
 The user's position is: "{user_position}"
 
 Generate a clear, concise opposing position that the AI will defend throughout the debate.
-CRITICAL: Limit your response to 2 sentences maximum to keep the debate fast.
+CRITICAL: Limit your response to {limit} maximum to keep the debate fast.
 Return only the opposing position statement, nothing else."""
     return call_gemini_text(prompt)
 
@@ -421,6 +423,12 @@ def _process_debate_turn(user_input: str):
     ss.turn_number += 1
     turn = ss.turn_number
 
+    # Extract session state variables before entering background threads
+    # Streamlit's session_state proxy cannot reliably be accessed inside threads
+    topic = ss.topic
+    ai_pos = ss.ai_position
+    history = list(ss.conversation_history)
+
     # Run pipeline concurrently
     with concurrent.futures.ThreadPoolExecutor() as executor:
         def parse_and_score(ui, t):
@@ -428,10 +436,10 @@ def _process_debate_turn(user_input: str):
             s = score_weaknesses(p, t)
             return p, s
 
-        future_ps = executor.submit(parse_and_score, user_input, ss.topic)
-        future_f = executor.submit(detect_fallacies, user_input, ss.ai_position)
+        future_ps = executor.submit(parse_and_score, user_input, topic)
+        future_f = executor.submit(detect_fallacies, user_input, ai_pos)
         future_st = executor.submit(
-            lambda: classify_stance(user_input, ss.conversation_history) if ss.conversation_history else "new_argument"
+            lambda: classify_stance(user_input, history) if history else "new_argument"
         )
         future_c = executor.submit(check_if_concluding, user_input)
 

@@ -14,6 +14,7 @@ from config import (
     LLM_BACKEND, LLM_MAX_RETRIES,
     GEMINI_API_KEY, GEMINI_MODEL, GEMINI_TEMPERATURE,
     OLLAMA_BASE_URL, OLLAMA_MODEL, OLLAMA_TEMPERATURE,
+    GROQ_API_KEY, GROQ_MODEL, GROQ_TEMPERATURE,
 )
 
 
@@ -32,6 +33,10 @@ if LLM_BACKEND == "gemini":
         ),
     )
     print(f"LLM Backend: Gemini ({GEMINI_MODEL})")
+elif LLM_BACKEND == "groq":
+    from groq import Groq
+    _groq_client = Groq(api_key=GROQ_API_KEY)
+    print(f"LLM Backend: Groq ({GROQ_MODEL})")
 else:
     print(f"LLM Backend: Ollama ({OLLAMA_MODEL} @ {OLLAMA_BASE_URL})")
 
@@ -77,10 +82,26 @@ def _call_ollama_raw(prompt: str, expect_json: bool = False) -> str:
         )
 
 
+def _call_groq_raw(prompt: str, expect_json: bool = False) -> str:
+    """Send prompt to Groq API and return raw text."""
+    kwargs = {
+        "messages": [{"role": "user", "content": prompt}],
+        "model": GROQ_MODEL,
+        "temperature": 0.1 if expect_json else GROQ_TEMPERATURE,
+    }
+    if expect_json:
+        kwargs["response_format"] = {"type": "json_object"}
+
+    response = _groq_client.chat.completions.create(**kwargs)
+    return response.choices[0].message.content.strip()
+
+
 def _call_llm_raw(prompt: str, expect_json: bool = False) -> str:
     """Route to the active backend."""
     if LLM_BACKEND == "gemini":
         return _call_gemini_raw(prompt, expect_json)
+    elif LLM_BACKEND == "groq":
+        return _call_groq_raw(prompt, expect_json)
     else:
         return _call_ollama_raw(prompt, expect_json)
 
@@ -148,7 +169,7 @@ def _strip_code_fences(text: str) -> str:
     Strip markdown code fences that LLMs sometimes wrap around JSON.
     Handles: ```json { ... } ```, ``` { ... } ```, etc.
     """
-    if LLM_BACKEND == "ollama":
+    if LLM_BACKEND in ("ollama", "groq"):
         import re
         # Local LLMs often add preambles: "Here is your JSON: ```json ... ```"
         match = re.search(r"```(?:json|JSON)?\s*(.*?)\s*```", text, re.DOTALL)
