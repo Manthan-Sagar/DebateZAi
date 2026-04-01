@@ -1,75 +1,121 @@
-# AI Debate Partner & Concept Mastery Evaluator
+# 🎯 AI Debate Partner & Concept Mastery Evaluator
 
-An AI system that **debates you**, **evaluates your reasoning in real time**, **detects logical fallacies**, **adapts question difficulty to your performance**, and **produces a structured concept mastery report**.
+An advanced AI system that **debates you**, **evaluates your reasoning in real time**, **detects logical fallacies**, **adapts question difficulty to your performance**, and **produces a structured concept mastery report**. 
 
-> Built with Gemini 1.5 Flash + Fine-tuned DistilBERT | Python | Streamlit
+Designed to sharpen reasoning skills against a strategic AI adversary, it utilizes a combination of prompt engineering with large language models, a sophisticated Python-based logic engine, and a custom fine-tuned NLP classifier.
 
-## 🏗️ Architecture
+> **Tech Stack:** Python, Streamlit, Gemini 1.5 Flash (via API) / Ollama (Local), Fine-tuned DistilBERT
 
-The system runs in **3 phases** with **7 distinct modules**:
+---
 
-```
-Phase 1: DEBATE MODE → AI challenges your position
-Phase 2: PROBE MODE  → AI tests your understanding with targeted questions
-Phase 3: EVALUATION   → Structured mastery report generated
-```
+## ✨ Key Features
 
-### Modules
+- **Interactive Debate Mode:** Engage in a back-and-forth debate where the AI challenges your position with dynamically generated counter-arguments and tracks your consistency.
+- **Knowledge Test Mode (Probe Mode):** Test your understanding with adaptive probing questions that target specific gaps in your foundational, intermediate, and advanced knowledge.
+- **Real-time Logic Evaluation:** Real-time flagging of "Hard" logical issues and "Soft" subjective weaknesses during the debate.
+- **Comprehensive Mastery Report:** Get a detailed summary of your overarching argument structure, logical missteps, adaptability, and final mastery score.
+- **Seamless Local/Cloud LLM Support:** Overcome API rate limits by seamlessly switching between Gemini (Cloud) and Ollama/Groq (Local) backends.
+
+---
+
+## 🏗️ System Architecture
+
+The ecosystem runs in a smooth Multi-Phase Pipeline managed by a sleek Streamlit Frontend. 
+
+### The 4 Application Screens
+1. **Setup Screen:** Define the topic, your initial position, mode (Debate vs. Knowledge Test), and difficulty.
+2. **Debate Mode:** Back-and-forth chat interface featuring inline fallacy badges and dynamic AI objectives (Probe ➝ Weaken ➝ Trap).
+3. **Knowledge Test:** A focused QA mode that adaptively increases difficulty based on the quality of your responses.
+4. **Evaluation Report:** Auto-generates a post-session mastery narrative summarizing strengths, fallacies, and areas for improvement.
+
+### The 7 Core Engine Modules
 | # | Module | Purpose | Approach |
 |---|--------|---------|----------|
-| 1 | Argument Parser | Extract claims, premises, assumptions from input | Gemini + few-shot prompting |
-| 2 | Weakness Scorer | Score each premise on evidence/scope/causality | Gemini + rubric prompt |
-| 3 | Fallacy Detector | Identify 6 types of logical fallacies | Gemini + few-shot (with over-detection prevention) |
-| 4 | Adaptive Question Engine | Generate probing questions targeting gaps | Concept graph (Python) + Gemini |
-| 5 | Consistency Tracker | Track positions, flag contradictions | Python dict + Gemini check |
-| 6 | Stance Firmness Classifier | Classify pushback type (new arg / restatement / emotional / concession) | Fine-tuned DistilBERT |
-| 7 | Mastery Evaluator | Generate structured session report | Python aggregation + Gemini narrative |
+| 1 | **Argument Parser** | Extract claims, premises, and assumptions from raw user input. | LLM + Few-shot prompting |
+| 2 | **Weakness Scorer** | Score each premise on evidence, scope, and causality. | LLM + Custom Rubric Evaluation |
+| 3 | **Fallacy Detector** | Identify up to 6 distinct types of logical fallacies dynamically. | LLM + Few-shot (Anti-over-detection) |
+| 4 | **Adaptive Engine** | Generate intelligent probing questions targeting specific knowledge gaps. | Python Concept Graph + LLM |
+| 5 | **Consistency Tracker** | Track evolving positions and flag logical contradictions. | Python Dictionary States + LLM |
+| 6 | **Stance Classifier** | Classify pushback types (new arg / restatement / emotional / concession). | **Fine-tuned DistilBERT** (Local Inference) |
+| 7 | **Mastery Evaluator** | Generate structured end-of-session reports. | Python Aggregation + LLM Narrative |
 
-## 🚀 Quick Start
+---
 
+## 🚀 Quick Start Guide
+
+### 1. Clone the repository
 ```bash
-# 1. Clone the repo
 git clone https://github.com/YOUR_USERNAME/AiDebaterSystem.git
 cd AiDebaterSystem
-
-# 2. Create virtual environment
-python -m venv venv
-venv\Scripts\activate  # Windows
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Set up your Gemini API key
-copy .env.example .env
-# Edit .env and add your key from https://aistudio.google.com
-
-# 5. Run the debate system
-python main.py
 ```
+
+### 2. Set up Virtual Environment
+```bash
+python -m venv venv
+
+# Activate Virtual Environment (Windows)
+venv\Scripts\activate
+
+# Activate Virtual Environment (Mac/Linux)
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables
+Copy `.env.example` to `.env` and configure your API keys or Local LLM Endpoints:
+```bash
+copy .env.example .env
+# Edit .env and add your Gemini API Key from https://aistudio.google.com
+```
+
+If utilizing Local Models, ensure Ollama is running and your `config.py` is pointed towards the local server.
+
+### 5. Launch the Application
+```bash
+streamlit run frontend/app.py
+```
+
+---
 
 ## 📁 Project Structure
 
-```
+```text
 AiDebaterSystem/
-├── config.py              # Central configuration
-├── gemini_client.py       # Core Gemini API wrapper
-├── main.py                # Session orchestrator (3-phase flow)
-├── prompts/               # All Gemini prompt templates
-├── modules/               # All 7 system modules
-├── training/              # DistilBERT training pipeline
-├── data/                  # Test data and labeled datasets
-├── models/                # Saved model weights
-├── frontend/              # Streamlit UI
-└── tests/                 # Unit tests
+├── config.py              # Central configuration & globals
+├── gemini_client.py       # Core Gemini API/Local LLM wrapper
+├── main.py                # Console-based Session orchestrator
+├── frontend/              # Streamlit Web Application (app.py)
+├── modules/               # The 7 core intelligence modules
+│   ├── adaptive_engine.py
+│   ├── argument_parser.py
+│   ├── conclusion_detector.py
+│   ├── consistency_tracker.py
+│   ├── fallacy_detector.py
+│   ├── mastery_evaluator.py
+│   ├── rebuttal_generator.py
+│   ├── stance_classifier.py
+│   └── weakness_scorer.py
+├── prompts/               # All LLM Prompt Templates
+├── training/              # Optimization & DistilBERT Training Pipelines 
+├── data/                  # Test data, labeled datasets, and CMV data
+├── models/                # Saved local model weights (e.g. DistilBERT)
+└── tests/                 # Unit tests & validation
 ```
-
-## 🧠 Design Decisions
-
-_TODO: Document key design decisions as you build._
-
-## 🐛 What Went Wrong and How I Fixed It
-
-_TODO: Document real engineering challenges and solutions._
 
 ---
+
+## 🧠 Model Training & Fine-Tuning
+
+A major component of the AI Debate Partner is its ability to structurally understand user text without solely relying upon external APIs. To achieve robust, low-latency execution, we fine-tuned a **DistilBERT** model to act as our **Stance Firmness Classifier**.
+
+- Addressed severe class imbalances using weighted loss tracking and synthetic dataset generation.
+- Implemented robust GPU-accelerated local pipeline using PyTorch and HuggingFace Transformers.
+- Allows the system to near-instantly determine the fundamental stance of the user's incoming argument without costly API round-trips.
+
+---
+
 **Manthan | DTU Electrical Engineering**
