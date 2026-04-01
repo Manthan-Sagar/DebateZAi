@@ -4,7 +4,28 @@ An advanced AI system that **debates you**, **evaluates your reasoning in real t
 
 Designed to sharpen reasoning skills against a strategic AI adversary, it utilizes a combination of prompt engineering with large language models, a sophisticated Python-based logic engine, and a custom fine-tuned NLP classifier.
 
-> **Tech Stack:** Python, Streamlit, Gemini 1.5 Flash (via API) / Ollama (Local), Fine-tuned DistilBERT
+## 🛠️ Tech Stack & Libraries
+
+This project leverages a diverse and powerful set of tools to enable real-time debate logic, fast NLP processing, and a beautiful UI:
+
+### **Core LLM Backend**
+- **Google Gemini (2.5 Flash):** The primary engine behind evaluating complex arguments via few-shot prompting.
+- **Groq:** Lightning-fast API inferencing to keep the debate cadence real-time and snappy.
+- **Ollama:** Facilitates completely local LLM execution, entirely bypassing API rate limits and ensuring complete privacy.
+
+### **Machine Learning & NLP**
+- **PyTorch & HuggingFace Transformers:** Built and executed the training pipeline for our custom **DistilBERT** stance classification model.
+- **Scikit-learn:** Used for metric evaluation, classification reports, and handling severe dataset class imbalances via custom weighting.
+- **Datasets (HuggingFace):** Handled large-scale synthetic dataset ingestion and processing.
+
+### **Data & Logic Engines**
+- **NetworkX:** Powers the **Adaptive Engine**, mapping complex conceptual relationships into topological graphs to dynamically track and probe the user's knowledge.
+- **Pandas & NumPy:** Core utilities for tracking metrics, handling internal state, and matrix evaluations off-the-chain.
+- **PRAW (Python Reddit API Wrapper):** Used for scraping massive amounts of real-world structured "Change My View" (CMV) arguments to fine-tune our classifiers.
+
+### **Frontend & Architecture**
+- **Streamlit:** Powers our heavily-customized, responsive 4-screen chat interface. We utilize its concurrent futures execution and session states heavily for real-time responsiveness.
+- **Python-dotenv:** Securely manages environment variables across multiple dynamically-swapped LLM backends.
 
 ---
 
